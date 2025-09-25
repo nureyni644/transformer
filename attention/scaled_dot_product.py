@@ -71,9 +71,9 @@ class MultiHeadAttention(nn.Module):
         return x
     def combine_heads(self,x):
         batch_size, num_head,seq_len,d_k = x.size()
-        print(f"In Combine heads:{x.size()}")
+        # print(f"In Combine heads:{x.size()}")
         x = x.transpose(1,2).contiguous().view(batch_size,seq_len,self.d_model)
-        print(f"End Combine heads:{x.size()}")
+        # print(f"End Combine heads:{x.size()}")
         return x
 
     def forward(self, query, key, value,pad_mask = None):

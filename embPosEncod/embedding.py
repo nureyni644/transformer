@@ -25,7 +25,7 @@ class OSEmbedding(nn.Module):
     def forward(self,x):
         seq = x.size()[1]
         x = self.emb(x)
-        print(x)
+        # print(x)
         x +=self.getPositionalEncoding(seq_lenght=seq,d=self.d_model)
         return x
 
