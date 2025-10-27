@@ -60,6 +60,7 @@ class MultiHeadAttention(nn.Module):
             scaled_attenation_logits += (mask* -1e9)
         
         attention_weights = torch.softmax(scaled_attenation_logits,axis=-1)
+        # print(attention_weights.shape)
         output = torch.matmul(attention_weights,V)
         # output.view()
         return attention_weights,output
@@ -82,8 +83,67 @@ class MultiHeadAttention(nn.Module):
         K = self.split_heads(self.w_k(key))
         V = self.split_heads(self.w_v(value))
         attention_weights,output =self.scaled_dot_product_attention(Q,K,V,pad_mask)
+        # print(f"attention_weights: {attention_weights.shape}")
         output = self.combine_heads(output)
         return output
 
 
-# mha = MultiHeadAttention(d_model=4,num_heads=2)
+class CaulsalAttention(nn.Module):
+
+    def __init__(self,d_model, num_heads):
+        super(CaulsalAttention,self).__init__()
+
+        assert d_model % num_heads == 0, "d_model doit etre divisible par hum_heads"
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+
+        self.w_q = nn.Linear(d_model,d_model)
+        self.w_k = nn.Linear(d_model,d_model)
+        self.w_v = nn.Linear(d_model,d_model)
+        self.w_o =nn.Linear(d_model,d_model)
+    
+    def scaled_dot_product_attention(self,Q,K,V,mask = None):
+
+        qk_matmul = torch.matmul(Q,K.transpose(-2,-1))
+
+        scaled_attenation_logits = qk_matmul / math.sqrt(self.d_k)
+        if mask is not None:
+            scaled_attenation_logits += (mask* -1e9)
+
+
+        mask = self.getCausalMask(seq_len=scaled_attenation_logits.size()[3])
+        scaled_attenation_logits = scaled_attenation_logits.masked_fill(mask,value=float('-inf'))
+        attention_weights = torch.softmax(scaled_attenation_logits,axis=-1)
+        # print(f"attentions avec mask :{attention_weights}")
+        output = torch.matmul(attention_weights,V)
+        return attention_weights,output
+    
+    def split_heads(self,x):
+        batch_size ,seq_len,_ = x.size()
+        x = x.view(batch_size,seq_len, self.num_heads,self.d_k).transpose(1,2)
+        
+        return x
+    def combine_heads(self,x):
+        batch_size, num_head,seq_len,d_k = x.size()
+        # print(f"In Combine heads:{x.size()}")
+        x = x.transpose(1,2).contiguous().view(batch_size,seq_len,self.d_model)
+        # print(f"End Combine heads:{x.size()}")
+        return x
+
+    def forward(self, query, key, value,pad_mask = None):
+        
+        Q = self.split_heads(self.w_q(query))
+        K = self.split_heads(self.w_k(key))
+        V = self.split_heads(self.w_v(value))
+        attention_weights,output =self.scaled_dot_product_attention(Q,K,V,pad_mask)
+        output = self.combine_heads(output)
+        # print(f"Output attention: {output}")
+        return output
+
+
+    def getCausalMask(self,seq_len:int):
+
+        mask = torch.triu(torch.ones(seq_len,seq_len),diagonal=1).bool()
+        return mask
+
