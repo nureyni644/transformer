@@ -17,7 +17,7 @@ class Transformer(nn.Module):
         x_e = self.encoder(x_e)
         x_d = self.decoder(x_d,x_e)
         batch, seq_len, d = x_d.size()
-        # x_d = x_d.view((batch,seq_len*d))
+        
         x_d = self.ffn(x_d)
         
         x_d = self.softmax(x_d)

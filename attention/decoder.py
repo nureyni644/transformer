@@ -23,14 +23,11 @@ class Decoder(nn.Module):
         super(Decoder,self).__init__()
         self.emb = OSEmbedding(voc_size, emb_dim)
         self.layers = nn.ModuleList([Block(d_model=d_model, num_heads=num_heads) for _ in range(num_layers)])
-        self.output = nn.Linear(d_model, voc_size)
-        self.act = nn.Sigmoid()
+       
     def forward(self,x_dec,out_en):
         
         x_dec = self.emb(x_dec)
         for layer in self.layers:
             x_dec = layer(x_dec, out_en)
-        x_dec = self.output(x_dec)
-        x_dec = self.act(x_dec)
         return x_dec
        
