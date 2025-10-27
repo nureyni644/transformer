@@ -25,11 +25,11 @@ class Encoder(nn.Module):
 
         self.emb = OSEmbedding(voc_size= vocab_size, emb_dim=d_model)
         self.layers = nn.ModuleList([Block(d_model=d_model, num_heads=num_heads) for _ in range(num_layers)])
-        self.act = nn.Sigmoid()
+        # self.act = nn.Sigmoid()
     def forward(self,x):
         x = self.emb(x)
         for layer in self.layers:
             x = layer(x)
-        x = self.act(x)
+        # x = self.act(x)
         return x
     
